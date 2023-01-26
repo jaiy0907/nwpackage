@@ -13,12 +13,21 @@ import xmlrpc.client
 
 
 def HTTPrequest(url):
+    '''
+    Function used to get data from an url.
+    Args:
+        A URL
+    '''
+
     with urllib.request.urlopen(url) as f:
         response = f.read()
 
 
 
 class TCPRequestHandler(socketserver.BaseRequestHandler):
+    '''
+    General request handler for TCP server. Appends the incoming data into server memory.
+    '''
     def handle(self):
         if self.server.timeout != 0:
             self.server.socket.settimeout(self.server.timeout)
@@ -29,6 +38,18 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
     
 
 class TCPServer(socketserver.TCPServer):
+    '''
+    Class to create a TCPServer
+    
+    Attributes:
+        storage = [] A list to store incoming data from clients
+
+    Methods:
+        get_storage() = Returns the memory of the server
+        attach_ssl() = Attaches a ssl certificate to the sockets of the server
+        detach_ssl = Removes the ssl certificate from the sockets of the server
+        start() = Starts the server in forever mode
+    '''
     def __init__(self, server_address, port, requesthandler=TCPRequestHandler):
         self._storage = []
         socketserver.TCPServer.__init__(self, (server_address, port), requesthandler)
@@ -59,6 +80,20 @@ class TCPServer(socketserver.TCPServer):
 
 
 class TCPClient:
+    '''
+    Class to create a TCP Client
+
+    Attributes:
+        sock = the socket through which the client communicates
+        (host, port) = The hostname and port number to which(if) the client is connected to. 
+        sslflag = Flag to show whether the client's socket is wrap with a ssl context
+        
+    Methods:
+        connect_to_server() = Requires the host name and port number of the server. Establishes a connection between a running server if possible.
+        attach_ssl() = Attaches a ssl certificate to the port of the client
+        detach_ssl() = Detaches the ssl context if the socket is wrapped with it.
+        send_data() = Sends data to a server if the socket is connected to it. Receives a response from the server.
+    '''
     def __init__(self, host=None, port=None):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.host = host
@@ -113,7 +148,10 @@ class TCPClient:
 
 
 
-class UDPRequestHandler(socketserver.BaseRequestHandler):
+class UDPRequestHandler(socketserver.BaseRequestHandler):       
+    '''
+    General UDP Request Handler. Appends incoming data to the memory of the server.
+    '''
     def handle(self):
         if self.server.timeout != None:
             self.server.socket.settimeout(self.server.timeout) 
@@ -123,6 +161,18 @@ class UDPRequestHandler(socketserver.BaseRequestHandler):
 
 
 class UDPServer(socketserver.UDPServer):
+    '''
+    Class to create a UDP Client.
+    
+    Attributes:
+        storage = A list to store incoming data from clients
+
+    Methods:
+        get_storage = Returns the storage of the server.
+        attach_ssl = Attaches SSL certificate and key to the socket of the server.
+        detach_ssl = detaches the SSL certificate from the socket.
+        start = starts the server in forever mode
+    '''
     def __init__(self, server_address, port, requesthandler=UDPRequestHandler):
         self._storage = []
         socketserver.UDPServer.__init__(self, (server_address, port), requesthandler)
@@ -151,9 +201,22 @@ class UDPServer(socketserver.UDPServer):
 
 
 class UDPClient:
+    '''
+    Class to create a TCP Client
+
+    Attributes:
+        sock = the socket through which the client communicates
+        (host, port) = The hostname and port number to which(if) the client is connected to. 
+        sslflag = Flag to show whether the client's socket is wrap with a ssl context
+        timeout = Sets the timeout of the sockets to check for unestablished connections.(Data may never reach any server)
+        
+    Methods:
+        attach_ssl() = Attaches a ssl certificate to the port of the client
+        detach_ssl() = Detaches the ssl context if the socket is wrapped with it.
+        send_data() = Sends data to a server if the socket is connected to it. Receives a response from the server.
+    '''
     def __init__(self, host=None, port=None, timeout=None):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.path_to_ca_bundle = None
         self.host = host
         self.port = port
         self.sslflag = 0
@@ -196,6 +259,14 @@ class UDPClient:
 
 
 class XMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
+    '''
+    Class to create a XMLRPC Server
+    
+    Methods:
+        start() = Starts the server in forever mode
+        attach_function = attaches function to the server
+        attach_instance = attachese functions to the server so that exposed methods can be used.
+    '''
     def __init__(self, server_address, port, requesthandler=None):
         xmlrpc.server.SimpleXMLRPCServer.__init__(self, (server_address, port))
         self.register_introspection_functions()
@@ -219,6 +290,16 @@ class XMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
         
 
 class XMLRPCClient(xmlrpc.client.ServerProxy):
+    '''
+    A Class to create a XMLRPCClient.
+    Attributes:
+        host = the host to which the client is connected to.
+
+    methods:
+        connect_to_server = connects the client to server. Server's url and port is needed.
+        get_function_list = Returns the list of accessible functions
+    '''
+
     def __init__(self, host=None):
         self.host = host
         try:
@@ -240,6 +321,9 @@ class XMLRPCClient(xmlrpc.client.ServerProxy):
 
 
 def generateIPaddresses(ip):
+    '''
+    Generates ip addreses in range given by a CIDR network
+    '''
     try:
         ips = ipaddress.ip_network(ip, strict = False).hosts()
         li = []

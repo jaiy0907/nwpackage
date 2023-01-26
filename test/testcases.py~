@@ -2,7 +2,7 @@ import unittest
 import sys
 sys.path.append("../")
 from src.APIpackage.module import *
-
+import ipaddress
 
 class TestTCP(unittest.TestCase):
     def setUp(self):
@@ -84,13 +84,13 @@ class TestXMLRPC(unittest.TestCase):
     
     def test_connect_to_server(self):
         self.client.connect_to_server(self.server_address)
-        sefl.assertEqual(self.client.get_functions_list, ['add', 'subtract', 'system.listMethods', 'system.methodHelp', 'system.methodSignature', 'system.multicall'])
+        self.assertEqual(self.client.get_functions_list, ['add', 'subtract', 'system.listMethods', 'system.methodHelp', 'system.methodSignature', 'system.multicall'])
 
 
 class TestIP(unittest.TestCase):
 
     def test_correct_generation_IPV4(self):
-        self.assertEqual(generateIPaddresses("192.0.0.0/30"), [IPv4Address('192.0.0.1'), IPv4Address('192.0.0.2')])
+        self.assertEqual(generateIPaddresses("192.0.0.0/30"), [ipaddress.IPv4Address('192.0.0.1'), ipaddress.IPv4Address('192.0.0.2')])
 
 
 

@@ -93,10 +93,6 @@ class TestIP(unittest.TestCase):
         self.assertEqual(generateIPaddresses("192.0.0.0/30"), [ipaddress.IPv4Address('192.0.0.1'), ipaddress.IPv4Address('192.0.0.2')])
 
 
-
-
-
-
 class TestHTTP(unittest.TestCase):
     pass
 
