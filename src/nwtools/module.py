@@ -102,7 +102,7 @@ class TCPServer(socketserver.TCPServer):
         if timeout is not None:
             self.timeout = timeout
         try: 
-            print("Server started. Listening on port " + self.server_address[1])
+            print("Server started. Listening on port " + str(self.server_address[1]))
             while True:
                 self.handle_request()
         except KeyboardInterrupt:
@@ -185,8 +185,8 @@ class TCPClient:
         self.path_to_server_certchain = path_to_server_certchain
         self.path_to_client_certchain = path_to_client_certchain
         self.path_to_client_key = path_to_client_key
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=path_to_server_certchain)
-        context.load_cert_chain(certfile=path_to_client_certchain, keyfile=path_to_client_key)
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self.path_to_server_certchain)
+        context.load_cert_chain(certfile=self.path_to_client_certchain, keyfile=self.path_to_client_key)
         try:
             self._sock = context.wrap_socket(self._sock, server_hostname=self.host)
             self.sslflag = 1
@@ -197,8 +197,21 @@ class TCPClient:
         '''
         Removes SSL from the socket of the client
         '''
-        self._sock = self._sock.unwrap()
-            
+        try:   
+            self._sock = self._sock.unwrap()
+        except ssl.SSLError:
+            self.sslflag = 0
+            self._sock.connect((self.host, self.port))
+    
+    def get_peer_sslcertificate(self):
+        '''
+        Returns:
+            The ssl certificate of the connected server.
+        '''
+        if (self.sslflag == 0):
+            return 'SSL protocol not attached with the socket'
+        return self._sock.getpeercert()
+
     def send_data(self, data):
         '''
         Sends the data to the connected server
@@ -208,7 +221,11 @@ class TCPClient:
         try:
             self._sock.sendall(bytes(data + '/n', "utf-8"))
             response = str(self._sock.recv(1024), "utf-8")
-            self.connect_to_server(self.host, self.port)
+            self._sock.close()
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if self.sslflag == 1:
+                self.attach_ssl(self.path_to_server_certchain, self.path_to_client_certchain, self.path_to_client_key)
+            self._sock.connect((self.host, self.port))
             return response
         except OSError:
             return "Client is not connected to server."
@@ -216,7 +233,7 @@ class TCPClient:
 
 
 
-class UDPRequestHandler(socketserver.BaseRequestHandler):       
+class UDPRequestHandler(socketserver.BaseRequestHandler):      
     '''
     General UDP Request Handler. Appends incoming data to the memory of the server.
     '''
@@ -254,8 +271,8 @@ class UDPServer(socketserver.UDPServer):
         self.socket = context.wrap_socket(self.socket, server_side=True)
 
     def detach_ssl(self):
-        try:
-            self.socket = self.socket.detach()
+        self.socket = self.socket.detach()
+    
     def start(self, timeout=None):
         if timeout != None:
             self.timeout = timeout
